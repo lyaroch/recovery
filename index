@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Recovery">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Recovery Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --slate:#8AA4B0;--slate-light:#cddde3;--slate-dark:#5a7a88;
+  --orange:#E58A3C;--mustard:#D4B63E;--olive:#5E6B47;--warm-gray:#9B9186;
+  --ice:#6bb3d4;--ice-bg:#e8f4fa;--ice-border:#b8ddf0;
+  --bg:#F5F2EE;--surface:#FDFCFA;--text:#2C2826;--muted:#7a746e;--border:#e4dfd9;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:84px;}
+
+/* NAV */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom,0);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 2px 7px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:0.58rem;font-weight:600;color:var(--muted);cursor:pointer;gap:2px;transition:color 0.15s;}
+.nav-btn.active{color:var(--slate-dark);}
+.nav-icon{font-size:1.2rem;line-height:1;}
+
+/* PAGES */
+.page{display:none;padding:16px 16px 8px;}
+.page.active{display:block;}
+.page-header{margin-bottom:15px;}
+.page-header h1{font-family:'DM Serif Display',serif;font-size:1.65rem;color:var(--slate-dark);}
+.page-sub{font-size:0.76rem;color:var(--muted);margin-top:2px;}
+.clock{font-size:0.72rem;color:var(--muted);font-weight:500;letter-spacing:0.4px;text-transform:uppercase;margin-top:3px;}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 15px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,0.04);}
+.card-title{font-family:'DM Serif Display',serif;font-size:0.98rem;margin-bottom:11px;}
+.card-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;}
+.card-row .card-title{margin-bottom:0;}
+.small-btn{font-size:0.68rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:8px;padding:3px 9px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.empty{font-size:0.8rem;color:var(--muted);text-align:center;padding:14px 0;}
+
+/* MED PILLS */
+.med-status-row{display:flex;flex-direction:column;gap:7px;}
+.med-pill{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:11px;}
+.med-pill.ok{background:#edf4f0;border:1px solid #c3dac9;}
+.med-pill.wait{background:#fdf3ea;border:1px solid #f0d0aa;}
+.med-pill.sleeping{background:#f0f0f4;border:1px solid #d0d0dc;}
+.med-name{font-weight:600;font-size:0.86rem;}
+.med-detail{font-size:0.71rem;color:var(--muted);margin-top:2px;}
+.status-badge{font-size:0.68rem;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;}
+.badge-ok{background:#c3dac9;color:#2a5c38;}
+.badge-wait{background:#f0d0aa;color:#8a4a10;}
+.badge-sleep{background:#d0d0dc;color:#44445a;}
+
+/* REC BOX */
+.rec{border-radius:10px;padding:10px 12px;font-size:0.8rem;line-height:1.5;margin-bottom:12px;}
+.rec-ok{background:#f0f7f2;border-left:3px solid var(--olive);color:#2d4a1e;}
+.rec-warn{background:#fff3e0;border-left:3px solid var(--orange);color:#7a3e08;}
+.rec-sleep{background:#f3f3f8;border-left:3px solid var(--slate);color:#3a3a5a;}
+
+/* SLEEP TOGGLE */
+.sleep-row{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:11px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.04);transition:background 0.2s;}
+.sleep-row.on{background:#f0f0f6;border-color:#c0c0d8;}
+.sleep-left{display:flex;align-items:center;gap:10px;}
+.sleep-lbl{font-weight:600;font-size:0.87rem;}
+.sleep-sub{font-size:0.71rem;color:var(--muted);margin-top:2px;}
+.tog{width:42px;height:23px;border-radius:12px;background:var(--border);position:relative;transition:background 0.2s;flex-shrink:0;}
+.tog.on{background:var(--slate);}
+.tog::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:white;top:3px;left:3px;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.2);}
+.tog.on::after{transform:translateX(19px);}
+
+/* WEEK LIST */
+.day-group{margin-bottom:12px;}
+.day-label{font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.day-label.today-label{color:var(--slate-dark);}
+.event-row{display:flex;align-items:flex-start;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);}
+.event-row:last-child{border-bottom:none;}
+.ev-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.ev-title{font-size:0.83rem;font-weight:600;}
+.ev-sub{font-size:0.71rem;color:var(--muted);margin-top:1px;}
+
+/* ICE TRACKER */
+.ice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ice-card{background:var(--ice-bg);border:1.5px solid var(--ice-border);border-radius:14px;padding:13px 12px;text-align:center;}
+.ice-card.active-ice{background:#d4ecf7;border-color:var(--ice);}
+.ice-label{font-weight:700;font-size:0.88rem;color:var(--ice);margin-bottom:6px;}
+.ice-timer{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--text);line-height:1;margin-bottom:4px;}
+.ice-status{font-size:0.7rem;color:var(--muted);margin-bottom:10px;min-height:16px;}
+.ice-count{font-size:0.7rem;font-weight:600;color:var(--ice);margin-bottom:8px;}
+.ice-btn{width:100%;padding:9px;border-radius:10px;border:none;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.ice-btn.start{background:var(--ice);color:white;}
+.ice-btn.stop{background:#e8f4fa;border:1.5px solid var(--ice);color:var(--ice);}
+.ice-btn:active{opacity:0.8;}
+.ice-progress{width:100%;height:4px;background:#c8e8f5;border-radius:2px;margin-bottom:8px;overflow:hidden;}
+.ice-progress-bar{height:100%;background:var(--ice);border-radius:2px;transition:width 1s linear;}
+
+/* DOSE BUTTONS */
+.dose-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.dose-btn{padding:11px 8px;border-radius:12px;border:2px solid transparent;font-family:'DM Sans',sans-serif;font-size:0.81rem;font-weight:600;cursor:pointer;text-align:center;line-height:1.3;transition:all 0.15s;}
+.dose-btn:active{transform:scale(0.97);}
+.dose-btn.motrin{background:#e8f0f4;border-color:var(--slate);color:var(--slate-dark);}
+.dose-btn.norco{background:#fdf0e6;border-color:var(--orange);color:#b05a10;}
+.dose-btn.tylenol{background:#fafae8;border-color:var(--mustard);color:#7a6800;}
+.dose-btn.not-yet{opacity:0.5;}
+.dose-btn .dsub{font-size:0.66rem;font-weight:400;opacity:0.75;margin-top:3px;}
+.full-col{grid-column:1/-1;}
+
+/* HISTORY */
+.h-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);}
+.h-item:last-child{border-bottom:none;}
+.hdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.hdot-m{background:var(--slate);}.hdot-n{background:var(--orange);}.hdot-t{background:var(--mustard);}
+.hmed{font-weight:600;font-size:0.82rem;}
+.htime{font-size:0.72rem;color:var(--muted);}
+.hpain{font-size:0.7rem;font-weight:600;padding:2px 6px;border-radius:10px;margin-top:2px;display:inline-block;}
+.pain-low{background:#edf4f0;color:#2a5c38;}
+.pain-mid{background:#fff7e0;color:#7a5500;}
+.pain-high{background:#fdf0e6;color:#b05a10;}
+.pain-severe{background:#fde8e8;color:#a02020;}
+.hnext{font-size:0.7rem;color:var(--muted);margin-left:auto;text-align:right;}
+.hdel{background:none;border:none;font-size:0.85rem;cursor:pointer;opacity:0.28;padding:2px 4px;flex-shrink:0;transition:opacity 0.15s;}
+.hdel:active{opacity:0.8;}
+
+/* PAIN SELECTOR */
+.pain-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:4px;}
+.pain-chip{padding:8px 4px;border-radius:9px;border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;background:var(--bg);color:var(--muted);text-align:center;transition:all 0.15s;}
+.pain-chip.sel{border-color:var(--orange);background:#fdf0e6;color:#b05a10;}
+.pain-hint{font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:14px;}
+
+/* NOTES */
+.note-item{padding:10px 0;border-bottom:1px solid var(--border);}
+.note-item:last-child{border-bottom:none;}
+.note-date{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px;}
+.note-text{font-size:0.84rem;line-height:1.5;}
+.note-footer{display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.note-pain-badge{font-size:0.69rem;font-weight:600;padding:2px 7px;border-radius:10px;}
+.note-del{background:none;border:none;font-size:0.82rem;cursor:pointer;opacity:0.25;padding:0;transition:opacity 0.15s;}
+.note-del:active{opacity:0.7;}
+.notes-input{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:var(--bg);color:var(--text);outline:none;resize:none;height:80px;transition:border-color 0.15s;}
+.notes-input:focus{border-color:var(--slate);}
+.notes-add-btn{width:100%;margin-top:8px;padding:10px;border-radius:10px;border:none;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;}
+
+/* PAIN SCALE LEGEND */
+.pain-scale-row{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+.ps-chip{font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:10px;}
+
+/* EMERGENCY INFO */
+.info-field{margin-bottom:12px;}
+.info-label{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;}
+.info-input{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;}
+.info-input:focus{border-color:var(--slate);}
+.info-input.saved{background:#f0f7f2;border-color:#c3dac9;}
+.info-save-btn{width:100%;padding:10px;border-radius:10px;border:none;background:var(--olive);color:white;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;margin-top:4px;}
+.warn-tag{display:inline-block;background:#fde8e8;color:#a02020;font-size:0.72rem;font-weight:600;padding:3px 8px;border-radius:8px;margin:3px 3px 0 0;}
+
+/* SCHEDULE */
+.sched-view-toggle{display:flex;gap:5px;margin-bottom:13px;}
+.view-btn{flex:1;padding:8px 4px;border-radius:9px;border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.74rem;font-weight:600;cursor:pointer;background:var(--bg);color:var(--muted);transition:all 0.15s;}
+.view-btn.active{background:var(--slate);color:white;border-color:var(--slate);}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.cal-month{font-family:'DM Serif Display',serif;font-size:1.05rem;}
+.cal-arrow{background:none;border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--text);display:flex;align-items:center;justify-content:center;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-dow{text-align:center;font-size:0.62rem;font-weight:600;color:var(--muted);text-transform:uppercase;padding-bottom:5px;}
+.cal-day{text-align:center;padding:4px 1px;border-radius:7px;font-size:0.8rem;cursor:pointer;min-height:32px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;}
+.cal-day.other-month{color:#d0cbc5;}
+.cal-day.today{font-weight:700;color:var(--slate-dark);}
+.cal-day.selected{background:var(--slate);color:white;}
+.cal-day.selected .cdot{background:white!important;}
+.cal-day.today.selected{background:var(--slate-dark);}
+.dot-row{display:flex;gap:2px;justify-content:center;margin-top:2px;height:5px;}
+.cdot{width:4px;height:4px;border-radius:50%;}
+.cdot-appt{background:var(--olive);}
+.cdot-ms{background:var(--mustard);}
+.day-detail-hdr{font-family:'DM Serif Display',serif;font-size:0.96rem;margin-bottom:9px;color:var(--slate-dark);}
+.sched-event{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.sched-event:last-child{border-bottom:none;}
+.sev-icon{font-size:1rem;flex-shrink:0;}
+.sev-body{flex:1;min-width:0;}
+.sev-title{font-weight:600;font-size:0.84rem;}
+.sev-date{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.sev-notes{font-size:0.71rem;color:var(--muted);margin-top:2px;font-style:italic;}
+.sev-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.del-btn{background:none;border:none;font-size:0.82rem;cursor:pointer;opacity:0.28;padding:2px 4px;transition:opacity 0.15s;}
+.cd-badge{font-size:0.67rem;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap;}
+.badge-today{background:#fff7e0;color:#6b5500;}
+.badge-future{background:#e8f0f4;color:var(--slate-dark);}
+.badge-past{background:#f0f0f4;color:#888;}
+.add-form{display:flex;flex-direction:column;gap:8px;}
+.add-form input,.add-form select,.add-form textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;}
+.add-form input:focus,.add-form select:focus,.add-form textarea:focus{border-color:var(--slate);}
+.add-form textarea{resize:none;height:54px;}
+.add-btn{padding:10px;border-radius:10px;border:none;background:var(--slate);color:white;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;}
+.type-chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+.type-chip{padding:7px 4px;border-radius:9px;border:1.5px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.7rem;font-weight:600;cursor:pointer;background:var(--bg);color:var(--muted);text-align:center;transition:all 0.15s;}
+.type-chip.sel{border-color:var(--slate);background:#e8f0f4;color:var(--slate-dark);}
+
+/* EXPORT */
+.export-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:0.75rem;font-family:monospace;line-height:1.6;white-space:pre-wrap;color:var(--text);max-height:300px;overflow-y:auto;margin-bottom:10px;}
+.export-btn{width:100%;padding:10px;border-radius:10px;border:none;background:var(--slate-dark);color:white;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.overlay.show{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 18px 32px;width:100%;max-width:480px;box-shadow:0 -8px 40px rgba(0,0,0,0.15);transform:translateY(30px);transition:transform 0.25s;}
+.overlay.show .modal{transform:translateY(0);}
+.modal h3{font-family:'DM Serif Display',serif;font-size:1.05rem;margin-bottom:5px;}
+.modal-sub{font-size:0.8rem;color:var(--muted);margin-bottom:12px;line-height:1.4;}
+.modal-label{font-size:0.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:5px;}
+.modal-input{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;background:var(--bg);color:var(--text);outline:none;margin-bottom:4px;-webkit-appearance:none;}
+.modal-input:focus{border-color:var(--slate);}
+.modal-hint{font-size:0.69rem;color:var(--muted);margin-bottom:12px;}
+.modal-btns{display:flex;gap:9px;margin-top:4px;}
+.mbtn{flex:1;padding:11px;border-radius:12px;border:none;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;}
+.mbtn.confirm{background:var(--orange);color:white;}
+.mbtn.cancel{background:var(--border);color:var(--text);}
+
+/* TOAST */
+.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:white;padding:8px 16px;border-radius:20px;font-size:0.79rem;font-weight:500;opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ HOME ══════════════════ -->
+<div class="page active" id="page-home">
+  <div class="page-header">
+    <h1>Recovery</h1>
+    <div class="clock" id="homeClock"></div>
+  </div>
+
+  <div id="homeRec"></div>
+
+  <div class="sleep-row" id="sleepRowHome" onclick="toggleSleep()">
+    <div class="sleep-left"><span style="font-size:1.15rem">🌙</span>
+      <div><div class="sleep-lbl">Sleeping</div><div class="sleep-sub" id="sleepSubHome">Tap to mark him as sleeping</div></div>
+    </div>
+    <div class="tog" id="togHome"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Meds right now</div>
+    <div class="med-status-row" id="homeStatusRows"></div>
+  </div>
+
+  <!-- ICE TRACKER -->
+  <div class="card">
+    <div class="card-row">
+      <div class="card-title">Ice therapy</div>
+      <span style="font-size:0.7rem;color:var(--muted)">20 min on · 20 min off · 3×/day</span>
+    </div>
+    <div class="ice-grid">
+      <div class="ice-card" id="iceCard-knee">
+        <div class="ice-label">🦵 Knee</div>
+        <div class="ice-timer" id="iceTimer-knee">20:00</div>
+        <div class="ice-progress"><div class="ice-progress-bar" id="iceBar-knee" style="width:0%"></div></div>
+        <div class="ice-status" id="iceStatus-knee">Ready</div>
+        <div class="ice-count" id="iceCount-knee">0 / 3 today</div>
+        <button class="ice-btn start" id="iceBtn-knee" onclick="iceAction('knee')">Start icing</button>
+      </div>
+      <div class="ice-card" id="iceCard-elbow">
+        <div class="ice-label">💪 Elbow</div>
+        <div class="ice-timer" id="iceTimer-elbow">20:00</div>
+        <div class="ice-progress"><div class="ice-progress-bar" id="iceBar-elbow" style="width:0%"></div></div>
+        <div class="ice-status" id="iceStatus-elbow">Ready</div>
+        <div class="ice-count" id="iceCount-elbow">0 / 3 today</div>
+        <button class="ice-btn start" id="iceBtn-elbow" onclick="iceAction('elbow')">Start icing</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="homeWeekCard">
+    <div class="card-title">This week</div>
+    <div id="homeWeekList"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ MEDS ══════════════════ -->
+<div class="page" id="page-meds">
+  <div class="page-header">
+    <h1>Meds</h1>
+    <div class="clock" id="medsClock"></div>
+  </div>
+
+  <div id="medsRec"></div>
+
+  <div class="sleep-row" id="sleepRowMeds" onclick="toggleSleep()">
+    <div class="sleep-left"><span style="font-size:1.15rem">🌙</span>
+      <div><div class="sleep-lbl">Sleeping</div><div class="sleep-sub" id="sleepSubMeds">Tap to mark him as sleeping</div></div>
+    </div>
+    <div class="tog" id="togMeds"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Log a dose</div>
+    <div class="dose-grid">
+      <button class="dose-btn motrin full-col" id="btnMotrin" onclick="openDoseModal('Motrin')">
+        💊 Motrin (Ibuprofen)
+        <div class="dsub">Every 4 hrs · <span id="nextMotrin">available now</span></div>
+      </button>
+      <button class="dose-btn norco" id="btnNorco" onclick="openDoseModal('Norco')">
+        🔴 Norco
+        <div class="dsub">Pain is bad · <span id="nextNorco">now</span></div>
+      </button>
+      <button class="dose-btn tylenol" id="btnTylenol" onclick="openDoseModal('Tylenol')">
+        🟡 Tylenol
+        <div class="dsub">Pain is mild · <span id="nextTylenol">now</span></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <div class="card-title">Dose history</div>
+      <button class="small-btn" onclick="clearHistory()">Clear all</button>
+    </div>
+    <div id="historyList"><div class="empty">No doses logged yet</div></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="card">
+    <div class="card-row">
+      <div class="card-title">Export summary</div>
+      <button class="small-btn" onclick="generateExport()">Generate</button>
+    </div>
+    <div id="exportBox" style="display:none">
+      <div class="export-box" id="exportText"></div>
+      <button class="export-btn" onclick="copyExport()">📋 Copy to clipboard</button>
+    </div>
+    <div id="exportHint" style="font-size:0.78rem;color:var(--muted)">Tap Generate to create a dose summary you can send to the doctor.</div>
+  </div>
+</div>
+
+<!-- ══════════════════ NOTES ══════════════════ -->
+<div class="page" id="page-notes">
+  <div class="page-header">
+    <h1>Notes</h1>
+    <div class="page-sub">Pain log · Daily journal</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Add note</div>
+    <div class="pain-scale-row" id="painScaleRow"></div>
+    <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px;text-align:center">Pain level (optional)</div>
+    <textarea class="notes-input" id="noteInput" placeholder="How is he doing? Swelling, mood, sleep, appetite..."></textarea>
+    <button class="notes-add-btn" onclick="addNote()">+ Add note</button>
+  </div>
+
+  <div class="card">
+    <div class="card-row">
+      <div class="card-title">Journal</div>
+      <button class="small-btn" onclick="clearNotes()">Clear all</button>
+    </div>
+    <div id="notesList"><div class="empty">No notes yet</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════ SCHEDULE ══════════════════ -->
+<div class="page" id="page-schedule">
+  <div class="page-header">
+    <h1>Schedule</h1>
+    <div class="page-sub">Appointments &amp; milestones</div>
+  </div>
+
+  <div class="sched-view-toggle">
+    <button class="view-btn active" id="vbtnCal" onclick="setSchedView('cal',this)">📅 Calendar</button>
+    <button class="view-btn" id="vbtnList" onclick="setSchedView('list',this)">📋 All</button>
+    <button class="view-btn" id="vbtnAdd" onclick="setSchedView('add',this)">＋ Add</button>
+  </div>
+
+  <div id="schedCalView">
+    <div class="card">
+      <div class="cal-nav">
+        <button class="cal-arrow" onclick="calPrev()">‹</button>
+        <div class="cal-month" id="calMonthLabel"></div>
+        <button class="cal-arrow" onclick="calNext()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div class="card">
+      <div class="day-detail-hdr" id="dayDetailHdr">Select a day</div>
+      <div id="dayDetailList"><div class="empty">Nothing on this day</div></div>
+    </div>
+  </div>
+
+  <div id="schedListView" style="display:none">
+    <div class="card">
+      <div class="card-row">
+        <div class="card-title">All events</div>
+        <button class="small-btn" onclick="clearEvents()">Clear all</button>
+      </div>
+      <div id="allEventsList"><div class="empty">No events yet</div></div>
+    </div>
+  </div>
+
+  <div id="schedAddView" style="display:none">
+    <div class="card">
+      <div class="card-title">Add event</div>
+      <div class="add-form">
+        <input type="text" id="evTitle" placeholder="e.g. Follow-up with Dr. Smith, Cast off..." maxlength="80">
+        <div class="type-chips" id="typeChips"></div>
+        <input type="datetime-local" id="evDate">
+        <textarea id="evNotes" placeholder="Notes (optional)"></textarea>
+        <button class="add-btn" onclick="addEvent()">+ Add event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ INFO ══════════════════ -->
+<div class="page" id="page-info">
+  <div class="page-header">
+    <h1>Emergency Info</h1>
+    <div class="page-sub">Surgeon · Pharmacy · What to watch for</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Care team</div>
+    <div class="info-field"><div class="info-label">Surgeon name</div><input class="info-input" id="info-surgeon" type="text" placeholder="Dr. ..." oninput="saveInfo()"></div>
+    <div class="info-field"><div class="info-label">Surgeon phone</div><input class="info-input" id="info-surgeon-phone" type="tel" placeholder="(555) 000-0000" oninput="saveInfo()"></div>
+    <div class="info-field"><div class="info-label">Surgeon after-hours / on-call</div><input class="info-input" id="info-oncall" type="tel" placeholder="(555) 000-0000" oninput="saveInfo()"></div>
+    <div class="info-field"><div class="info-label">Pharmacy</div><input class="info-input" id="info-pharmacy" type="text" placeholder="Name + phone" oninput="saveInfo()"></div>
+    <div class="info-field"><div class="info-label">Hospital / facility</div><input class="info-input" id="info-hospital" type="text" placeholder="" oninput="saveInfo()"></div>
+    <div class="info-field" style="margin-bottom:0"><div class="info-label">Insurance / ID #</div><input class="info-input" id="info-insurance" type="text" placeholder="" oninput="saveInfo()"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ Call immediately if...</div>
+    <div id="warnTagsBox" style="margin-bottom:10px"></div>
+    <div style="font-size:0.78rem;color:var(--muted);line-height:1.6">
+      🌡️ Fever over 101.5°F<br>
+      🦵 Increasing redness, warmth, or swelling<br>
+      😮 Numbness or tingling that gets worse<br>
+      🩸 Bleeding that won't stop<br>
+      💜 Skin that looks blue or pale<br>
+      😰 Severe pain not controlled by meds<br>
+      🤢 Can't keep food/fluids down
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Surgery notes</div>
+    <div class="info-field"><div class="info-label">Procedure / date</div><input class="info-input" id="info-procedure" type="text" placeholder="e.g. Right knee arthroscopy, May 22" oninput="saveInfo()"></div>
+    <div class="info-field" style="margin-bottom:0"><div class="info-label">Special instructions</div><textarea class="info-input" id="info-instructions" placeholder="Weight bearing restrictions, activity limits, wound care..." style="height:80px;resize:none" oninput="saveInfo()"></textarea></div>
+  </div>
+</div>
+
+<!-- DOSE MODAL -->
+<div class="overlay" id="doseOverlay">
+  <div class="modal">
+    <h3 id="doseModalTitle"></h3>
+    <p class="modal-sub" id="doseModalBody"></p>
+    <div class="pain-row" id="modalPainRow"></div>
+    <div class="pain-hint">Pain level right now (optional)</div>
+    <label class="modal-label" for="doseTimeInput">Time given</label>
+    <input type="datetime-local" id="doseTimeInput" class="modal-input">
+    <div class="modal-hint">Change if logging a dose that already happened</div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeDoseModal()">Cancel</button>
+      <button class="mbtn confirm" onclick="logDose()">Log it</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<nav class="nav-bar">
+  <button class="nav-btn active" id="nav-home" onclick="switchPage('home',this)"><span class="nav-icon">🏠</span>Home</button>
+  <button class="nav-btn" id="nav-meds" onclick="switchPage('meds',this)"><span class="nav-icon">💊</span>Meds</button>
+  <button class="nav-btn" id="nav-notes" onclick="switchPage('notes',this)"><span class="nav-icon">📓</span>Notes</button>
+  <button class="nav-btn" id="nav-schedule" onclick="switchPage('schedule',this)"><span class="nav-icon">📅</span>Schedule</button>
+  <button class="nav-btn" id="nav-info" onclick="switchPage('info',this)"><span class="nav-icon">🚨</span>Info</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────
+const INTERVALS={Motrin:4,Norco:4,Tylenol:4};
+const PAIN_MEDS=['Norco','Tylenol'];
+const ICE_ON=20*60, ICE_OFF=20*60;
+const EVENT_TYPES=[
+  {key:'appt',icon:'🏥',label:'Appointment'},
+  {key:'cast',icon:'🦴',label:'Cast'},
+  {key:'bandage',icon:'🩹',label:'Bandages'},
+  {key:'bearing',icon:'🦶',label:'Wt Bearing'},
+  {key:'pt',icon:'🏃',label:'PT'},
+  {key:'followup',icon:'👨‍⚕️',label:'Follow-up'},
+  {key:'other',icon:'📌',label:'Other'},
+];
+const PAIN_LABELS=['1','2','3','4','5','6','7','8','9','10'];
+
+function evIcon(t){return(EVENT_TYPES.find(x=>x.key===t)||EVENT_TYPES[6]).icon;}
+
+// ─── STATE ────────────────────────────────────
+let S=loadState();
+let activePage='home';
+let pendingMed=null;
+let selectedPain=null;
+let selectedNotePain=null;
+let calYear,calMonth,selectedDay;
+let schedView='cal';
+let selectedEvType='appt';
+let iceTimers={knee:{interval:null,endTime:null,phase:'idle',offEnd:null},elbow:{interval:null,endTime:null,phase:'idle',offEnd:null}};
+
+function loadState(){
+  try{
+    const s=localStorage.getItem('recoveryV5');
+    if(s)return JSON.parse(s);
+    // migrate v4
+    const v4=localStorage.getItem('recoveryV4');
+    if(v4){const o=JSON.parse(v4);return{history:o.history||[],sleeping:o.sleeping||false,events:o.events||[],notes:[],info:{},iceCounts:{}};}
+    const v2=localStorage.getItem('recoveryTrackerV2');
+    if(v2){const o=JSON.parse(v2);return{history:o.history||[],sleeping:o.sleeping||false,events:[...(o.appts||[]).map(a=>({...a,type:'appt',dateStr:a.date})),...(o.milestones||[]).map(m=>({...m,dateStr:m.date}))],notes:[],info:{},iceCounts:{}};}
+  }catch(e){}
+  return{history:[],sleeping:false,events:[],notes:[],info:{},iceCounts:{}};
+}
+function save(){localStorage.setItem('recoveryV5',JSON.stringify(S));}
+
+const _n=new Date();calYear=_n.getFullYear();calMonth=_n.getMonth();selectedDay=toDateKey(_n);
+
+// ─── PAGE NAV ─────────────────────────────────
+function switchPage(page,el){
+  activePage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+  render();
+}
+
+// ─── TIME UTILS ───────────────────────────────
+function now(){return Date.now();}
+function fmtTime(ts){return new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+function fmtAgo(ts){
+  const m=Math.round((now()-ts)/60000);
+  if(m<1)return'just now';if(m<60)return m+'m ago';
+  const h=Math.floor(m/60),r=m%60;return r?h+'h '+r+'m ago':h+'h ago';
+}
+function fmtHoursLeft(h){
+  if(h<=0)return'OK now';
+  const hrs=Math.floor(h),m=Math.round((h-hrs)*60);
+  if(!hrs)return m+'m';if(!m)return hrs+'h';return hrs+'h '+m+'m';
+}
+function toDateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayKey(){return toDateKey(new Date());}
+function fmtDateLabel(key){const d=new Date(key+'T00:00:00');return d.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});}
+function fmtDateShort(key){const d=new Date(key+'T00:00:00');return d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});}
+function fmtEventDT(ev){
+  if(!ev.dateStr)return'';
+  if(ev.dateStr.includes('T')){const d=new Date(ev.dateStr);return d.toLocaleDateString([],{month:'short',day:'numeric'})+' at '+d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+  return fmtDateShort(ev.dateStr);
+}
+function evDateKey(ev){return ev.dateStr?ev.dateStr.slice(0,10):'';}
+function daysFromToday(key){const t=new Date(key+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);return Math.round((t-today)/86400000);}
+function cdBadge(key){
+  const d=daysFromToday(key);
+  if(d===0)return{text:'Today',cls:'badge-today'};
+  if(d===1)return{text:'Tomorrow',cls:'badge-future'};
+  if(d>1)return{text:'In '+d+'d',cls:'badge-future'};
+  if(d===-1)return{text:'Yesterday',cls:'badge-past'};
+  return{text:Math.abs(d)+'d ago',cls:'badge-past'};
+}
+function localISONow(){const d=new Date(now());return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}
+function fmtSecs(s){const m=Math.floor(s/60),sec=s%60;return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
+
+// ─── MED LOGIC ────────────────────────────────
+function lastDose(med){return S.history.find(h=>h.med===med)||null;}
+function lastPain(){return S.history.find(h=>PAIN_MEDS.includes(h.med))||null;}
+function hoursLeft(med){
+  const l=PAIN_MEDS.includes(med)?lastPain():lastDose(med);
+  if(!l)return 0;
+  return Math.max(0,INTERVALS[med]-(now()-l.time)/3600000);
+}
+function okNow(med){return hoursLeft(med)===0;}
+function toggleSleep(){S.sleeping=!S.sleeping;save();render();}
+
+// ─── DOSE MODAL ───────────────────────────────
+function openDoseModal(med){
+  pendingMed=med; selectedPain=null;
+  document.getElementById('doseTimeInput').value=localISONow();
+  document.getElementById('doseModalTitle').textContent='Log '+med+'?';
+  let body='';
+  if(med==='Norco')body='Use when pain is bad.';
+  else if(med==='Tylenol'){const ln=S.history.find(h=>h.med==='Norco');body=ln&&(now()-ln.time)<4*3600000?'Note: Norco was given '+fmtAgo(ln.time)+'.':'Use when pain is mild.';}
+  else body='Every 4 hours.';
+  if(!okNow(med))body+=' ⚠️ May be too soon — check the time if backdating.';
+  document.getElementById('doseModalBody').textContent=body;
+  // pain chips
+  document.getElementById('modalPainRow').innerHTML=PAIN_LABELS.map(p=>`<div class="pain-chip" onclick="selectPain(${p},this)">${p}</div>`).join('');
+  document.getElementById('doseOverlay').classList.add('show');
+}
+function selectPain(n,el){
+  selectedPain=n;
+  document.querySelectorAll('#modalPainRow .pain-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function closeDoseModal(){pendingMed=null;selectedPain=null;document.getElementById('doseOverlay').classList.remove('show');}
+function logDose(){
+  if(!pendingMed)return;
+  const v=document.getElementById('doseTimeInput').value;
+  const t=v?new Date(v).getTime():now();
+  if(isNaN(t)){showToast('Invalid time');return;}
+  if(t>now()+60000){showToast("Can't log a future dose");return;}
+  S.history.unshift({med:pendingMed,time:t,pain:selectedPain});
+  S.history.sort((a,b)=>b.time-a.time);
+  if(S.history.length>80)S.history=S.history.slice(0,80);
+  save();showToast(pendingMed+' logged ✓');closeDoseModal();render();
+}
+function deleteHistoryItem(idx){
+  if(!confirm('Delete this dose entry?'))return;
+  S.history.splice(idx,1);save();render();
+}
+function clearHistory(){if(!confirm('Clear all dose history?'))return;S.history=[];save();render();}
+
+// ─── ICE LOGIC ────────────────────────────────
+function todayIceCount(limb){
+  const key='ice_'+limb+'_'+todayKey();
+  return(S.iceCounts&&S.iceCounts[key])||0;
+}
+function incrementIceCount(limb){
+  if(!S.iceCounts)S.iceCounts={};
+  const key='ice_'+limb+'_'+todayKey();
+  S.iceCounts[key]=(S.iceCounts[key]||0)+1;
+  save();
+}
+
+function iceAction(limb){
+  const st=iceTimers[limb];
+  if(st.phase==='idle'||st.phase==='off'){
+    startIcing(limb);
+  } else if(st.phase==='on'){
+    stopIcing(limb);
+  }
+}
+
+function startIcing(limb){
+  const st=iceTimers[limb];
+  if(st.interval)clearInterval(st.interval);
+  st.phase='on';
+  st.endTime=Date.now()+ICE_ON*1000;
+  st.interval=setInterval(()=>tickIce(limb),1000);
+  updateIceUI(limb);
+}
+
+function stopIcing(limb){
+  const st=iceTimers[limb];
+  if(st.interval)clearInterval(st.interval);
+  // count completed session
+  incrementIceCount(limb);
+  st.phase='off';
+  st.offEnd=Date.now()+ICE_OFF*1000;
+  st.interval=setInterval(()=>tickIce(limb),1000);
+  updateIceUI(limb);
+}
+
+function tickIce(limb){
+  const st=iceTimers[limb];
+  if(st.phase==='on'){
+    const rem=Math.max(0,Math.round((st.endTime-Date.now())/1000));
+    if(rem<=0){stopIcing(limb);return;}
+    updateIceUI(limb,rem);
+  } else if(st.phase==='off'){
+    const rem=Math.max(0,Math.round((st.offEnd-Date.now())/1000));
+    if(rem<=0){
+      clearInterval(st.interval);st.interval=null;st.phase='idle';
+      updateIceUI(limb);
+      showToast((limb==='knee'?'🦵 Knee':'💪 Elbow')+' — ready for next ice session!');
+      return;
+    }
+    updateIceUI(limb,rem);
+  }
+}
+
+function updateIceUI(limb,remSecs){
+  const st=iceTimers[limb];
+  const card=document.getElementById('iceCard-'+limb);
+  const timer=document.getElementById('iceTimer-'+limb);
+  const status=document.getElementById('iceStatus-'+limb);
+  const btn=document.getElementById('iceBtn-'+limb);
+  const bar=document.getElementById('iceBar-'+limb);
+  const count=document.getElementById('iceCount-'+limb);
+  if(!card)return;
+  const cnt=todayIceCount(limb);
+  count.textContent=cnt+' / 3 today';
+  if(st.phase==='on'){
+    const secs=remSecs!==undefined?remSecs:Math.max(0,Math.round((st.endTime-Date.now())/1000));
+    timer.textContent=fmtSecs(secs);
+    const pct=((ICE_ON-secs)/ICE_ON)*100;
+    bar.style.width=pct+'%';
+    status.textContent='Icing now ❄️';
+    btn.textContent='Stop icing';
+    btn.className='ice-btn stop';
+    card.classList.add('active-ice');
+  } else if(st.phase==='off'){
+    const secs=remSecs!==undefined?remSecs:Math.max(0,Math.round((st.offEnd-Date.now())/1000));
+    timer.textContent=fmtSecs(secs);
+    const pct=((ICE_OFF-secs)/ICE_OFF)*100;
+    bar.style.width=pct+'%';
+    status.textContent='Rest period ⏳';
+    btn.textContent='Waiting...';
+    btn.className='ice-btn stop';
+    btn.disabled=true;
+    card.classList.remove('active-ice');
+  } else {
+    timer.textContent='20:00';
+    bar.style.width='0%';
+    status.textContent=cnt>=3?'✅ Done for today':'Ready';
+    btn.textContent=cnt>=3?'Start again':'Start icing';
+    btn.className='ice-btn start';
+    btn.disabled=false;
+    card.classList.remove('active-ice');
+  }
+}
+
+// ─── NOTES ────────────────────────────────────
+function painClass(p){if(!p)return'';if(p<=3)return'pain-low';if(p<=5)return'pain-mid';if(p<=7)return'pain-high';return'pain-severe';}
+function painLabel(p){if(!p)return'';if(p<=3)return'Mild ('+p+')';if(p<=5)return'Moderate ('+p+')';if(p<=7)return'High ('+p+')';return'Severe ('+p+')';}
+
+function renderPainScale(containerId,selectedVal,onSelect){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  el.innerHTML=PAIN_LABELS.map(p=>`<div class="pain-chip${selectedVal==p?' sel':''}" onclick="${onSelect}(${p},this)">${p}</div>`).join('');
+}
+
+function selectNotePain(n,el){
+  selectedNotePain=n;
+  document.querySelectorAll('#painScaleRow .pain-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function addNote(){
+  const txt=document.getElementById('noteInput').value.trim();
+  if(!txt){showToast('Write something first');return;}
+  if(!S.notes)S.notes=[];
+  S.notes.unshift({id:Date.now(),text:txt,pain:selectedNotePain,ts:now()});
+  save();
+  document.getElementById('noteInput').value='';
+  selectedNotePain=null;
+  document.querySelectorAll('#painScaleRow .pain-chip').forEach(c=>c.classList.remove('sel'));
+  showToast('Note saved ✓');renderNotes();
+}
+function deleteNote(id){S.notes=(S.notes||[]).filter(n=>n.id!==id);save();renderNotes();}
+function clearNotes(){if(!confirm('Clear all notes?'))return;S.notes=[];save();renderNotes();}
+
+function renderNotes(){
+  renderPainScale('painScaleRow',selectedNotePain,'selectNotePain');
+  const c=document.getElementById('notesList');
+  if(!(S.notes||[]).length){c.innerHTML='<div class="empty">No notes yet</div>';return;}
+  c.innerHTML=S.notes.map(n=>{
+    const d=new Date(n.ts);
+    const dateStr=d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})+' · '+d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    return`<div class="note-item">
+      <div class="note-date">${dateStr}</div>
+      <div class="note-text">${n.text}</div>
+      <div class="note-footer">
+        ${n.pain?`<span class="note-pain-badge ${painClass(n.pain)}">${painLabel(n.pain)}</span>`:'<span></span>'}
+        <button class="note-del" onclick="deleteNote(${n.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── EMERGENCY INFO ───────────────────────────
+function saveInfo(){
+  const fields=['surgeon','surgeon-phone','oncall','pharmacy','hospital','insurance','procedure','instructions'];
+  if(!S.info)S.info={};
+  fields.forEach(f=>{const el=document.getElementById('info-'+f);if(el)S.info[f]=el.value;});
+  save();
+}
+function loadInfo(){
+  const fields=['surgeon','surgeon-phone','oncall','pharmacy','hospital','insurance','procedure','instructions'];
+  fields.forEach(f=>{const el=document.getElementById('info-'+f);if(el&&S.info&&S.info[f])el.value=S.info[f];});
+}
+
+// ─── EXPORT ───────────────────────────────────
+function generateExport(){
+  const now_d=new Date();
+  const lines=['RECOVERY SUMMARY','Generated: '+now_d.toLocaleString(),'─'.repeat(40),''];
+  // last 7 days of doses
+  const cutoff=now()-7*24*3600000;
+  const recent=S.history.filter(h=>h.time>=cutoff);
+  lines.push('DOSES — LAST 7 DAYS');
+  if(!recent.length){lines.push('  (none logged)');}
+  else{
+    let lastDay='';
+    [...recent].sort((a,b)=>a.time-b.time).forEach(h=>{
+      const d=new Date(h.time);
+      const dk=toDateKey(d);
+      if(dk!==lastDay){lines.push('');lines.push('  '+fmtDateShort(dk));lastDay=dk;}
+      const painTxt=h.pain?' [Pain: '+h.pain+'/10]':'';
+      lines.push('    '+fmtTime(h.time)+' — '+h.med+painTxt);
+    });
+  }
+  lines.push('');lines.push('─'.repeat(40));
+  // pain trend
+  const painEntries=S.history.filter(h=>h.pain&&h.time>=cutoff);
+  if(painEntries.length){
+    lines.push('PAIN LEVELS (when logged)');
+    painEntries.slice(0,20).forEach(h=>{
+      lines.push('  '+fmtDateShort(toDateKey(new Date(h.time)))+' '+fmtTime(h.time)+' — '+h.med+': '+h.pain+'/10');
+    });
+    lines.push('');lines.push('─'.repeat(40));
+  }
+  // notes
+  const recentNotes=(S.notes||[]).filter(n=>n.ts>=cutoff);
+  if(recentNotes.length){
+    lines.push('NOTES');
+    [...recentNotes].sort((a,b)=>a.ts-b.ts).forEach(n=>{
+      const d=new Date(n.ts);
+      lines.push('  '+fmtDateShort(toDateKey(d))+': '+n.text+(n.pain?' [Pain '+n.pain+'/10]':''));
+    });
+    lines.push('');lines.push('─'.repeat(40));
+  }
+  // info
+  if(S.info&&S.info.surgeon){lines.push('CARE TEAM');lines.push('  Surgeon: '+(S.info.surgeon||'')+(S.info['surgeon-phone']?' — '+S.info['surgeon-phone']:''));if(S.info.procedure)lines.push('  Procedure: '+S.info.procedure);lines.push('');}
+  const txt=lines.join('\n');
+  document.getElementById('exportText').textContent=txt;
+  document.getElementById('exportBox').style.display='block';
+  document.getElementById('exportHint').style.display='none';
+}
+function copyExport(){
+  const txt=document.getElementById('exportText').textContent;
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>showToast('Copied ✓')).catch(()=>fallbackCopy(txt));}
+  else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('Copied ✓');
+}
+
+// ─── EVENTS ───────────────────────────────────
+function addEvent(){
+  const title=document.getElementById('evTitle').value.trim();
+  const date=document.getElementById('evDate').value;
+  const notes=document.getElementById('evNotes').value.trim();
+  if(!title){showToast('Add a title first');return;}
+  if(!date){showToast('Pick a date');return;}
+  if(!S.events)S.events=[];
+  S.events.push({id:Date.now(),title,type:selectedEvType,dateStr:date,notes});
+  S.events.sort((a,b)=>new Date(a.dateStr)-new Date(b.dateStr));
+  save();
+  document.getElementById('evTitle').value='';document.getElementById('evDate').value='';document.getElementById('evNotes').value='';
+  showToast('Event added ✓');
+  selectedDay=date.slice(0,10);
+  const d=new Date(date+'T00:00:00');calYear=d.getFullYear();calMonth=d.getMonth();
+  setSchedView('cal',document.getElementById('vbtnCal'));
+  render();
+}
+function deleteEvent(id){S.events=(S.events||[]).filter(e=>e.id!==id);save();render();}
+function clearEvents(){if(!confirm('Clear all events?'))return;S.events=[];save();render();}
+function eventsOnDay(key){return(S.events||[]).filter(e=>evDateKey(e)===key);}
+
+function setSchedView(v,el){
+  schedView=v;
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('schedCalView').style.display=v==='cal'?'block':'none';
+  document.getElementById('schedListView').style.display=v==='list'?'block':'none';
+  document.getElementById('schedAddView').style.display=v==='add'?'block':'none';
+  if(v==='cal')renderCal();
+  if(v==='list')renderAllEvents();
+  if(v==='add')renderTypeChips();
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
+
+function renderTypeChips(){
+  document.getElementById('typeChips').innerHTML=EVENT_TYPES.map(t=>
+    `<div class="type-chip${selectedEvType===t.key?' sel':''}" onclick="selectType('${t.key}',this)">${t.icon} ${t.label}</div>`
+  ).join('');
+}
+function selectType(key,el){selectedEvType=key;document.querySelectorAll('.type-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+
+// ─── RENDER ───────────────────────────────────
+function render(){
+  updateClocks();
+  if(activePage==='home')renderHome();
+  if(activePage==='meds')renderMeds();
+  if(activePage==='notes')renderNotes();
+  if(activePage==='schedule'){if(schedView==='cal')renderCal();if(schedView==='list')renderAllEvents();}
+  if(activePage==='info')loadInfo();
+}
+
+function updateClocks(){
+  const s=new Date().toLocaleString([],{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  ['homeClock','medsClock'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=s;});
+}
+
+function renderHome(){
+  renderSleep('Home');renderRecBox('homeRec');
+  // med pills
+  let html='';
+  ['Motrin','Norco','Tylenol'].forEach(med=>{
+    const ok=okNow(med),h=hoursLeft(med);
+    const ld=S.history.find(x=>x.med===med)||null;
+    let cls,bc,bt;
+    if(S.sleeping&&!ok){cls='sleeping';bc='badge-sleep';bt='Sleeping';}
+    else if(ok){cls='ok';bc='badge-ok';bt='Available';}
+    else{cls='wait';bc='badge-wait';bt='Wait '+fmtHoursLeft(h);}
+    const last=ld?'Last: '+fmtAgo(ld.time):'Not given yet';
+    const next=ok?'Can give now':'OK at '+fmtTime((ld?ld.time:now())+4*3600000);
+    html+=`<div class="med-pill ${cls}"><div><div class="med-name">${med}</div><div class="med-detail">${last} · ${next}</div></div><span class="status-badge ${bc}">${bt}</span></div>`;
+  });
+  document.getElementById('homeStatusRows').innerHTML=html;
+  // ice UI
+  ['knee','elbow'].forEach(l=>updateIceUI(l));
+  // week
+  renderWeek();
+}
+
+function renderWeek(){
+  const today=new Date();today.setHours(0,0,0,0);
+  let html='';let any=false;
+  for(let i=0;i<7;i++){
+    const d=new Date(today);d.setDate(today.getDate()+i);
+    const key=toDateKey(d);
+    const evs=eventsOnDay(key);
+    if(!evs.length)continue;
+    any=true;
+    const isToday=key===todayKey();
+    const lbl=isToday?'Today':i===1?'Tomorrow':fmtDateShort(key);
+    html+=`<div class="day-group"><div class="day-label${isToday?' today-label':''}">${lbl}</div>`;
+    evs.forEach(ev=>{html+=`<div class="event-row"><span class="ev-icon">${evIcon(ev.type)}</span><div><div class="ev-title">${ev.title}</div><div class="ev-sub">${fmtEventDT(ev)}</div></div></div>`;});
+    html+='</div>';
+  }
+  document.getElementById('homeWeekList').innerHTML=any?html:'<div class="empty">Nothing in the next 7 days</div>';
+}
+
+function renderMeds(){
+  renderSleep('Meds');renderRecBox('medsRec');
+  ['Motrin','Norco','Tylenol'].forEach(med=>{
+    const ok=okNow(med);
+    document.getElementById('btn'+med).classList.toggle('not-yet',!ok);
+    const el=document.getElementById('next'+med);
+    if(el)el.textContent=ok?'available now':fmtHoursLeft(hoursLeft(med))+' left';
+  });
+  const c=document.getElementById('historyList');
+  if(!S.history.length){c.innerHTML='<div class="empty">No doses logged yet</div>';return;}
+  c.innerHTML=S.history.slice(0,20).map((x,i)=>{
+    const dot=x.med==='Motrin'?'hdot-m':x.med==='Norco'?'hdot-n':'hdot-t';
+    const ni=x.med==='Motrin'?'Next: '+fmtTime(x.time+4*3600000):'Next pain: '+fmtTime(x.time+4*3600000);
+    const painHtml=x.pain?`<div class="hpain ${painClass(x.pain)}">${painLabel(x.pain)}</div>`:'';
+    return`<div class="h-item"><div class="hdot ${dot}"></div><div style="flex:1"><div class="hmed">${x.med}</div><div class="htime">${fmtAgo(x.time)} · ${fmtTime(x.time)}</div>${painHtml}</div><div class="hnext">${ni}</div><button class="hdel" onclick="deleteHistoryItem(${i})" title="Delete">🗑</button></div>`;
+  }).join('');
+}
+
+function renderSleep(suffix){
+  const on=S.sleeping;
+  const row=document.getElementById('sleepRow'+suffix);const tog=document.getElementById('tog'+suffix);const sub=document.getElementById('sleepSub'+suffix);
+  if(!row)return;
+  row.classList.toggle('on',on);tog.classList.toggle('on',on);
+  sub.textContent=on?'Reminders paused — meds available if he wakes':'Tap to mark him as sleeping';
+}
+
+function renderRecBox(id){
+  const box=document.getElementById(id);if(!box)return;
+  if(S.sleeping){box.innerHTML=`<div class="rec rec-sleep">🌙 <strong>He's sleeping</strong> — no action needed. Motrin: ${okNow('Motrin')?'ready':'in '+fmtHoursLeft(hoursLeft('Motrin'))}. Pain relief: ${okNow('Norco')?'ready':'in '+fmtHoursLeft(hoursLeft('Norco'))}.</div>`;return;}
+  const mOk=okNow('Motrin'),pOk=okNow('Norco'),lp=lastPain();
+  let msg,cls='rec-ok';
+  if(mOk&&pOk)msg='✅ <strong>All meds available.</strong> Give Motrin now. Pain relief: Norco if bad, Tylenol if mild.';
+  else if(mOk&&!pOk)msg=`✅ <strong>Motrin is due.</strong> Pain relief (${lp?lp.med:'Norco/Tylenol'}) locked for another ${fmtHoursLeft(hoursLeft('Norco'))}.`;
+  else if(!mOk&&pOk){msg=`⚠️ <strong>Pain relief available now</strong> if needed. Motrin in ${fmtHoursLeft(hoursLeft('Motrin'))}.`;cls='rec-warn';}
+  else msg=`⏳ <strong>Nothing due yet.</strong> Next dose in ~${fmtHoursLeft(Math.min(hoursLeft('Motrin'),hoursLeft('Norco')))}.`;
+  box.innerHTML=`<div class="rec ${cls}">${msg}</div>`;
+}
+
+function renderCal(){
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  document.getElementById('calMonthLabel').textContent=MONTHS[calMonth]+' '+calYear;
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const dip=new Date(calYear,calMonth,0).getDate();
+  const today=todayKey();
+  let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<firstDay;i++){
+    const day=dip-firstDay+1+i;
+    const yr=calMonth===0?calYear-1:calYear,mo=calMonth===0?12:calMonth;
+    const key=yr+'-'+String(mo).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    html+=`<div class="cal-day other-month" onclick="selectCalDay('${key}')">${day}${dotRow(eventsOnDay(key))}</div>`;
+  }
+  for(let d=1;d<=dim;d++){
+    const key=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const cls=(key===today?'today':'')+(key===selectedDay?' selected':'');
+    html+=`<div class="cal-day ${cls}" onclick="selectCalDay('${key}')">${d}${dotRow(eventsOnDay(key))}</div>`;
+  }
+  const total=firstDay+dim,rem=total%7===0?0:7-(total%7);
+  for(let d=1;d<=rem;d++){
+    const yr=calMonth===11?calYear+1:calYear,mo=calMonth===11?1:calMonth+2;
+    const key=yr+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    html+=`<div class="cal-day other-month" onclick="selectCalDay('${key}')">${d}${dotRow(eventsOnDay(key))}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+  renderDayDetail();
+}
+function dotRow(evs){
+  if(!evs.length)return'<div class="dot-row"></div>';
+  return`<div class="dot-row">${evs.slice(0,3).map(e=>`<div class="cdot ${e.type==='appt'||e.type==='followup'?'cdot-appt':'cdot-ms'}"></div>`).join('')}</div>`;
+}
+function selectCalDay(key){selectedDay=key;const d=new Date(key+'T00:00:00');calYear=d.getFullYear();calMonth=d.getMonth();renderCal();}
+function renderDayDetail(){
+  const evs=eventsOnDay(selectedDay);
+  document.getElementById('dayDetailHdr').textContent=fmtDateLabel(selectedDay);
+  const c=document.getElementById('dayDetailList');
+  if(!evs.length){c.innerHTML='<div class="empty">Nothing on this day</div>';return;}
+  c.innerHTML=evs.map(ev=>`<div class="sched-event"><span class="sev-icon">${evIcon(ev.type)}</span><div class="sev-body"><div class="sev-title">${ev.title}</div><div class="sev-date">${fmtEventDT(ev)}</div>${ev.notes?`<div class="sev-notes">${ev.notes}</div>`:''}</div><div class="sev-right"><button class="del-btn" onclick="deleteEvent(${ev.id})">✕</button></div></div>`).join('');
+}
+function renderAllEvents(){
+  const evs=S.events||[];const c=document.getElementById('allEventsList');
+  if(!evs.length){c.innerHTML='<div class="empty">No events yet</div>';return;}
+  c.innerHTML=evs.map(ev=>{
+    const{text,cls}=cdBadge(evDateKey(ev));
+    return`<div class="sched-event"><span class="sev-icon">${evIcon(ev.type)}</span><div class="sev-body"><div class="sev-title">${ev.title}</div><div class="sev-date">${fmtEventDT(ev)}</div>${ev.notes?`<div class="sev-notes">${ev.notes}</div>`:''}</div><div class="sev-right"><span class="cd-badge ${cls}">${text}</span><button class="del-btn" onclick="deleteEvent(${ev.id})">✕</button></div></div>`;
+  }).join('');
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+
+document.getElementById('doseOverlay').addEventListener('click',function(e){if(e.target===this)closeDoseModal();});
+
+renderTypeChips();
+render();
+setInterval(()=>{
+  updateClocks();
+  if(activePage==='home'){renderRecBox('homeRec');renderHome();}
+  if(activePage==='meds'){renderRecBox('medsRec');renderMeds();}
+},30000);
+</script>
+</body>
+</html>
